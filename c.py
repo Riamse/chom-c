@@ -29,8 +29,8 @@ rules["$DECL;"] = {
         ("$TYPE", ' ', "$VARNAME", ";\n"): 1,
 }
 rules["$DECLS"] = {
-        ("$DECL;", "$DECLS"): .7,
-        ("",): .3,
+        ("$DECL;", "$DECLS"): .6,
+        ("",): .4,
 }
 
 g = Grammar()
