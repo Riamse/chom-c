@@ -50,6 +50,9 @@ def existing_var(ctx, nonterm, tokens):
         # XXX if there's no variables we're fucked
         # make an Exception that tells you to abort the line entirely?
         # but such an exception can't work if you make a new context though
+        # but if you make a new context the frame's going to be empty anyway
+        # so in no cases should something like this even be called if we're
+        # making a new frame in the same expansion, then.
         return 'dummy'
     print(frame.keys())
     return random.choice(tuple(frame.keys()))  # cba to use prob dists for this
