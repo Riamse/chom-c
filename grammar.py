@@ -5,6 +5,8 @@
 import sys
 import collections
 
+from common import Data
+
 TWO_ZILLION = (2 ** 30 - 1) * 2 + 1
 
 sys.setrecursionlimit(2 ** 10)
@@ -33,7 +35,7 @@ class ProbabilityDistribution:
         self.crap[h] = p
 
     def __getitem__(self, val):
-        # returns P(X = val) for a random variable X ~ self
+        # returns P(X = val) for a rv X st X ~ self
         return self.crap[val]
 
     def __call__(self, n=1):
@@ -57,6 +59,9 @@ class Grammar:
         self.terms = set()
         self.nonterms = set()
         self.rules = {}
+        self.frames = []
+        # frames is a list of dicts following the templatey thingy:
+        # {"var name": Data(type, stars, value)}
 
     def add_rule(self, nonterm: str, term: dict):
         X = ProbabilityDistribution(nonterm)
@@ -81,12 +86,18 @@ class Grammar:
     def expand(self, nonterm, tab=0):
         assert nonterm in self.nonterms
         ret = []
-        tokens = self.rules[nonterm]()[0]
-        for tok in tokens:
+        tokens = list(self.rules[nonterm]()[0])
+        for i, tok in enumerate(tokens):
+            if callable(tok):
+                tok = tok(self, nonterm, tokens)
+                tokens[i] = tok
             if tok in self.terms:
                 ret.append(tok)
-            if tok in self.nonterms:
+            elif tok in self.nonterms:
                 newtok = self.expand(tok, tab+4)
                 ret.extend(newtok)
+            else:
+                # well looks like it's a terminal
+                ret.append(tok)
         return ret
 
