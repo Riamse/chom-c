@@ -45,7 +45,15 @@ def register_new_var(ctx, nonterm, tokens):
     return ''
 
 def existing_var(ctx, nonterm, tokens):
-    frame = ctx.frames[-1]
+    # we should be searching from all frames in the squishified dict
+    squished = {}
+    for i in range(len(frames)):
+        frame = frames[-i-1]
+        for k, v in frame.items():
+            if k in squished:
+                continue
+            squished[k] = v
+    frame = squished
     if not frame:
         # XXX if there's no variables we're fucked
         # make an Exception that tells you to abort the line entirely?
