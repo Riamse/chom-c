@@ -47,8 +47,8 @@ def register_new_var(ctx, nonterm, tokens):
 def existing_var(ctx, nonterm, tokens):
     # we should be searching from all frames in the squishified dict
     squished = {}
-    for i in range(len(frames)):
-        frame = frames[-i-1]
+    for i in range(len(ctx.frames)):
+        frame = ctx.frames[-i-1]
         for k, v in frame.items():
             if k in squished:
                 continue
