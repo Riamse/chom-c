@@ -3,9 +3,11 @@
 # TODO: add Context objects for blocks and variables and stuff.
 
 import sys
+import random
 import collections
+from fractions import Fraction
 
-from common import Data
+from common import *
 
 TWO_ZILLION = (2 ** 30 - 1) * 2 + 1
 
@@ -17,40 +19,65 @@ class ProbabilityDistribution:
         self.name = name
         self.crapmap = {}
         self.rvcrapmap = {}
-        self.crap = {}
+        self.crap = []
+        self.c = 0
 
     def __repr__(self):
         return "{.__name__}(name={!r})".format(type(self), self.name)
 
-    def _behasherise(self, crap):
-        v = hash(crap) % TWO_ZILLION
-        if v in self.rvcrapmap:
-            return self._behasherise(str(v))
-        return v
-
     def __setitem__(self, val, p):
-        h = self.crapmap.get(val, self._behasherise(val))
+        h = self.crapmap.get(val)
+        if h is None:
+            h = self.c
+            self.c += 1
         self.crapmap[val] = h
         self.rvcrapmap[h] = val
-        self.crap[h] = p
+        if h == len(self.crap):
+            self.crap.append(p)
+        elif h > len(self.crap):
+            raise Exception("wtf behasherising")
+        else:
+            self.crap[h] = p
 
     def __getitem__(self, val):
         # returns P(X = val) for a rv X st X ~ self
         return self.crap[val]
 
     def __call__(self, n=1):
-        #if sum(self.crap.values()) != 1:
-        #    raise TypeError("not a real distribution")
-        garbage = [], []
-        for k, v in self.crap.items():
-            garbage[0].append(k)
-            garbage[1].append(v)
-        from scipy.stats import rv_discrete  # overkill, yo
-        X = rv_discrete(values=garbage)
         realret = [None] * n
-        for i, h in enumerate(X.rvs(size=n)):
+        for i, h in enumerate(self.sample(n)):
             realret[i] = self.rvcrapmap[h]
         return realret
+
+    def robin_hood(self):
+        pdf = self.crap.copy()
+        n = len(pdf)
+        a = Fraction(1, n)
+        k = [0] * n
+        v = [0] * n
+        for i in range(n):
+            k[i] = i
+            v[i] = (i + 1) * a
+        for q in range(n - 1):
+            i = pdf.index(min(pdf))
+            j = pdf.index(max(pdf))
+            if i == j: break
+            k[i] = j
+            v[i] = i * a + pdf[i]
+            pdf[j] = pdf[j] - (a - pdf[i])
+            pdf[i] = a
+        return pdf, k, v
+
+    def sample(self, num):
+        pdf, k, v = self.robin_hood()
+        n = len(pdf)
+        for _ in range(num):
+            u = random.random()
+            j = int(n * u)
+            if u < v[j]:
+                yield j
+            else:
+                yield k[j]
 
 
 class Grammar:
@@ -85,11 +112,14 @@ class Grammar:
 
     def expand(self, nonterm, tab=0):
         assert nonterm in self.nonterms
-        ret = []
+        ret = collections.deque()
         tokens = list(self.rules[nonterm]()[0])
         for i, tok in enumerate(tokens):
             if callable(tok):
-                tok = tok(self, nonterm, tokens)
+                try:
+                    tok = tok(self, nonterm, tokens)
+                except Abort:
+                    return ['']
                 tokens[i] = tok
             if tok in self.terms:
                 ret.append(tok)

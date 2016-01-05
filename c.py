@@ -10,7 +10,7 @@ import pickle
 from grammar import Grammar
 from fractions import Fraction
 
-from common import Data
+from common import *
 
 def enter_scope(ctx, nonterm, tokens):
     ctx.frames.append(dict())
@@ -61,8 +61,7 @@ def existing_var(ctx, nonterm, tokens):
         # but if you make a new context the frame's going to be empty anyway
         # so in no cases should something like this even be called if we're
         # making a new frame in the same expansion, then.
-        return 'dummy'
-    print(frame.keys())
+        raise Abort()
     return random.choice(tuple(frame.keys()))  # cba to use prob dists for this
 
 def instance_of_var(ctx, nonterm, tokens):
@@ -77,7 +76,7 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "$INCLUDES", '\n', "$DECLS", '\n', "$ASSIGNS", '\n', exit_scope): 1
+        (enter_scope, "$INCLUDES", '\n', "$DECLS", '\n', exit_scope): 1
 }
 rules["$INCLUDE"] = {
         ("#include", "<", "$DOT_H", ">", '\n'): 1,
