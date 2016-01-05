@@ -90,6 +90,7 @@ class Grammar:
         self.frames = []
         # frames is a list of dicts following the templatey thingy:
         # {"var name": Data(type, stars, value)}
+        self.tabs = -1
 
     def add_rule(self, nonterm: str, term: dict):
         X = ProbabilityDistribution(nonterm)
@@ -111,7 +112,7 @@ class Grammar:
     def rm_nonterminals(self, nonterminals: set):
         self.nonterms -= nonterminals
 
-    def expand(self, nonterm, tab=0):
+    def expand(self, nonterm):
         assert nonterm in self.nonterms
         ret = collections.deque()
         tokens = list(self.rules[nonterm]()[0])
@@ -122,15 +123,16 @@ class Grammar:
                 except Abort:
                     return ['']
             tokens[i] = tok
-            if tok in self.terms:
-                ret.append(tok)
-            elif tok in self.nonterms:
-                tok = self.expand(tok, tab+4)
-                ret.extend(tok)
-                tokens[i] = ''.join(tok)
+            tabs = self.tabs
+            if tok in self.nonterms:
+                toks = self.expand(tok)
+                #toks = [t.replace("\t", "\t" * tabs) for t in toks]
+                ret.extend(toks)
+                tokens[i] = ''.join(toks).replace("\t", "\t" * tabs)
                 #tokens[i:i] = tok
             else:
                 # well looks like it's a terminal after all
+                tok = tok.replace("\t", "\t" * tabs)
                 ret.append(tok)
         return ret
 

@@ -14,10 +14,12 @@ from common import *
 
 def enter_scope(ctx, nonterm, tokens):
     ctx.frames.append(dict())
+    ctx.tabs += 1
     return ''
 
 def exit_scope(ctx, nonterm, tokens):
     ctx.frames.pop()
+    ctx.tabs -= 1
     return ''
 
 with open("markov.syllable.pkl", "rb") as fp:
@@ -114,14 +116,14 @@ rules["$DECL;"] = {
         ("$TYPE", ' ', new_var, ";\n", register_new_var): 1,
 }
 rules["$DECLS"] = {
-        ("$DECL;", "$DECLS"): .6,
+        ('\t', "$DECL;", "$DECLS"): .6,
         ("",): .4,
 }
 rules["$ASSIGN;"] = {
         (existing_var, ' = ', instance_of_var, ';\n'): 1
 }
 rules["$ASSIGNS"] = {
-        ("$ASSIGN;", "$ASSIGNS"): .6,
+        ('\t', "$ASSIGN;", "$ASSIGNS"): .6,
         ("",): .4,
 }
 
