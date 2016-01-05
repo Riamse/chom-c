@@ -50,6 +50,7 @@ class ProbabilityDistribution:
         return realret
 
     def robin_hood(self):
+        # TODO: efficient-ify this
         pdf = self.crap.copy()
         n = len(pdf)
         a = Fraction(1, n)
@@ -114,20 +115,22 @@ class Grammar:
         assert nonterm in self.nonterms
         ret = collections.deque()
         tokens = list(self.rules[nonterm]()[0])
-        for i, tok in enumerate(tokens):
+        for i, tok in enumerate(tokens.copy()):
             if callable(tok):
                 try:
                     tok = tok(self, nonterm, tokens)
                 except Abort:
                     return ['']
-                tokens[i] = tok
+            tokens[i] = tok
             if tok in self.terms:
                 ret.append(tok)
             elif tok in self.nonterms:
-                newtok = self.expand(tok, tab+4)
-                ret.extend(newtok)
+                tok = self.expand(tok, tab+4)
+                ret.extend(tok)
+                tokens[i] = ''.join(tok)
+                #tokens[i:i] = tok
             else:
-                # well looks like it's a terminal
+                # well looks like it's a terminal after all
                 ret.append(tok)
         return ret
 

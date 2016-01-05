@@ -44,8 +44,7 @@ def register_new_var(ctx, nonterm, tokens):
     frame[varname] = Data(datatype, stars, None)
     return ''
 
-def existing_var(ctx, nonterm, tokens):
-    # we should be searching from all frames in the squishified dict
+def squishify_frames(ctx):
     squished = {}
     for i in range(len(ctx.frames)):
         frame = ctx.frames[-i-1]
@@ -53,7 +52,11 @@ def existing_var(ctx, nonterm, tokens):
             if k in squished:
                 continue
             squished[k] = v
-    frame = squished
+    return squished
+
+def existing_var(ctx, nonterm, tokens):
+    # we should be searching from all frames in the squishified dict
+    frame = squishify_frames(ctx)
     if not frame:
         # XXX if there's no variables we're fucked
         # make an Exception that tells you to abort the line entirely?
@@ -65,7 +68,17 @@ def existing_var(ctx, nonterm, tokens):
     return random.choice(tuple(frame.keys()))  # cba to use prob dists for this
 
 def instance_of_var(ctx, nonterm, tokens):
-    return '(void*) 0'
+    frame = squishify_frames(ctx)
+    var = frame[tokens[0]]
+    if var.stars > 0:
+        return "(void*) 0"
+    if var.type in {'int', 'long', 'short'}:
+        return str(int(random.random() * 2 ** 30))
+    elif var.type in {'double', 'float'}:
+        return str(random.random() * 2 ** 30)
+    elif var.type == 'char':
+        return repr(random.choice('aoeuidhtnspyfgcrlqjkxbmwvz'))
+    return 'new {}()'.format(var.type)
 
 rules = {}
 rules["$DOT_H"] = {}
@@ -76,7 +89,14 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "$INCLUDES", '\n', "$DECLS", '\n', exit_scope): 1
+        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', exit_scope): 1
+}
+rules["$FUNCDECLS"] = {
+        ("$FUNCDECL", "$FUNCDECLS"): .3,
+        ("",): .7
+}
+rules["$FUNCDECL"] = {
+        ("$TYPE", ' ', new_var, "()\n{\n", enter_scope, "$DECLS", '\n', "$ASSIGNS", exit_scope, "}\n"): 1
 }
 rules["$INCLUDE"] = {
         ("#include", "<", "$DOT_H", ">", '\n'): 1,
