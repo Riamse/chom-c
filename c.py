@@ -33,7 +33,7 @@ def new_var(ctx, nonterm, tokens):
     # so we can just check the most recently bescopen scopes for stuff
     frame = ctx.frames[-1]
     new_var_name = makeify_new_var()
-    while new_var_name in frame:
+    while new_var_name in frame and not new_var_name == 'main':
         new_var_name = makeify_new_var()  # TODO: markov chains from last year
     return new_var_name
 
@@ -91,7 +91,10 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', exit_scope): 1
+        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
+}
+rules["$MAINFUNC"] = {
+        ("int main(int argc, char *argv[])\n{\n", enter_scope, "$DECLS", "\n", "$ASSIGNS", exit_scope, "}\n"): 1
 }
 rules["$FUNCDECLS"] = {
         ("$FUNCDECL", "$FUNCDECLS"): .3,
