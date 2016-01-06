@@ -32,8 +32,9 @@ def new_var(ctx, nonterm, tokens):
     # fortunately we're allowed to 'override' upperly scoped scopes
     # so we can just check the most recently bescopen scopes for stuff
     frame = ctx.frames[-1]
+    not_allowed = {'main', 'argc', 'argv', 'while', 'for', 'if', 'return'}
     new_var_name = makeify_new_var()
-    while new_var_name in frame and not new_var_name in {'main','argc','argv'}:
+    while new_var_name in frame or new_var_name in not_allowed:
         new_var_name = makeify_new_var()  # TODO: markov chains from last year
     return new_var_name
 
