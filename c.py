@@ -33,17 +33,24 @@ def new_var(ctx, nonterm, tokens):
     # so we can just check the most recently bescopen scopes for stuff
     frame = ctx.frames[-1]
     new_var_name = makeify_new_var()
-    while new_var_name in frame and not new_var_name == 'main':
+    while new_var_name in frame and not new_var_name in {'main','argc','argv'}:
         new_var_name = makeify_new_var()  # TODO: markov chains from last year
     return new_var_name
 
 def register_new_var(ctx, nonterm, tokens):
     # aaaaaaaaaaah
     frame = ctx.frames[-1]
-    datatype,  crap, varname, crap, self = tokens
+    datatype, varname, self = tokens
     stars = datatype.count("*")
-    datatype = datatype.replace("*", '')
+    datatype = datatype.replace("*", '').strip()
     frame[varname] = Data(datatype, stars, None)
+    return ''
+
+def register_new_func(ctx, nonterm, tokens):
+    # TODO: function arguments
+    frame = ctx.frames[-1]
+    datatype, crap, varname, crap, crap, crap, crap, crap, crap, crap, crap, crap, self = tokens
+    frame[varname] = Callable(datatype, dict())
     return ''
 
 def squishify_frames(ctx):
@@ -59,6 +66,9 @@ def squishify_frames(ctx):
 def existing_var(ctx, nonterm, tokens):
     # we should be searching from all frames in the squishified dict
     frame = squishify_frames(ctx)
+    for k, v in tuple(frame.items()):
+        if not isinstance(v, Data):
+            del frame[k]
     if not frame:
         # XXX if there's no variables we're fucked
         # make an Exception that tells you to abort the line entirely?
@@ -82,6 +92,12 @@ def instance_of_var(ctx, nonterm, tokens):
         return repr(random.choice('aoeuidhtnspyfgcrlqjkxbmwvz'))
     return 'new {}()'.format(var.type)
 
+def assign_var(ctx, nonterm, tokens):
+    varname, crap, value, self = tokens
+    frame = squishify_frames(ctx)
+    frame[varname] = frame[varname]._replace(value=value)
+    return ''
+
 rules = {}
 rules["$DOT_H"] = {}
 l = ['assert.h', 'ctype.h', 'errno.h', 'fenv.h', 'float.h', 'inttypes.h', 'iso646.h', 'limits.h', 'locale.h', 'math.h', 'setjmp.h', 'signal.h', 'stdarg.h', 'stdbool.h', 'stddef.h', 'stdint.h', 'stdio.h', 'stdlib.h', 'string.h', 'tgmath.h', 'time.h', 'uchar.h', 'wchar.h', 'wctype.h']
@@ -101,7 +117,15 @@ rules["$FUNCDECLS"] = {
         ("",): .7
 }
 rules["$FUNCDECL"] = {
-        ("$TYPE", ' ', new_var, "()\n{\n", enter_scope, "$DECLS", '\n', "$ASSIGNS", exit_scope, "}\n"): 1
+        ("$TYPE", ' ', new_var, enter_scope, "(", "$ARGDECL", ")\n{\n", "$DECLS", '\n', "$ASSIGNS", exit_scope, "}\n", register_new_func): 1
+}
+rules["$ARGDECL"] = {
+        ("$DECL", "$MOREARGS"): .5,
+        ("",): .5
+}
+rules["$MOREARGS"] = {
+        (', ', "$DECL", "$MOREARGS"): .4,
+        ("",): .6
 }
 rules["$INCLUDE"] = {
         ("#include", "<", "$DOT_H", ">", '\n'): 1,
@@ -111,19 +135,26 @@ rules["$INCLUDES"] = {
         ("",): .2,
 }
 _types = ['int', 'char', 'long', 'short', 'float', 'double']
-types = [t + "*" for t in _types] +  _types  # start small
+_types = [t + ' ' for t in _types.copy()]
+types = [t.strip() + " *" for t in _types] +  _types  # start small
 rules["$TYPE"] = {}
 for t in types:
     rules["$TYPE"][(t,)] = Fraction(1, len(types))
+rules["$DECL"] = {
+        ("$TYPE", new_var, register_new_var): 1,
+}
 rules["$DECL;"] = {
-        ("$TYPE", ' ', new_var, ";\n", register_new_var): 1,
+        ("$DECL", ";\n"): 1,
 }
 rules["$DECLS"] = {
         ('\t', "$DECL;", "$DECLS"): .6,
         ("",): .4,
 }
+rules["$ASSIGN"] = {
+        (existing_var, ' = ', instance_of_var, assign_var): 1
+}
 rules["$ASSIGN;"] = {
-        (existing_var, ' = ', instance_of_var, ';\n'): 1
+        ("$ASSIGN", ";\n"): 1
 }
 rules["$ASSIGNS"] = {
         ('\t', "$ASSIGN;", "$ASSIGNS"): .6,

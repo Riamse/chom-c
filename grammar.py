@@ -116,7 +116,7 @@ class Grammar:
         assert nonterm in self.nonterms
         ret = collections.deque()
         tokens = list(self.rules[nonterm]()[0])
-        for i, tok in enumerate(tokens.copy()):
+        for i, tok in enumerate(tokens):
             if callable(tok):
                 try:
                     tok = tok(self, nonterm, tokens)
