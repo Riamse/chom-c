@@ -19,9 +19,10 @@ def zillion_tests(pid, count):
             sp.check_call(['gcc', fn, '-o', outfile])
     try:
         do_crap()
-    finally:
-        os.unlink(fn)
-        os.unlink(outfile)
+    except:
+        return
+    os.unlink(fn)
+    os.unlink(outfile)
 
 cpus = mp.cpu_count()
 total //= cpus
