@@ -190,3 +190,13 @@ for right in rules.values():
         g.add_terminals({tok for tok in tokens if tok and (callable(tok) or (isinstance(tok, str) and tok[0] != "$"))})
 for k, v in rules.items():
     g.add_rule(k, v)
+
+def new_c():
+    ret = Grammar()
+    ret.add_nonterminals({k for k in rules.keys()})
+    for right in rules.values():
+        for tokens in right:
+            ret.add_terminals({tok for tok in tokens if tok and (callable(tok) or (isinstance(tok, str) and tok[0] != "$"))})
+    for k, v in rules.items():
+        ret.add_rule(k, v)
+    return ret
