@@ -90,6 +90,8 @@ def instance_of_var(ctx, nonterm, tokens):
         return str(random.random() * 2 ** 30)
     elif var.type == 'char':
         return repr(random.choice('aoeuidhtnspyfgcrlqjkxbmwvz'))
+    elif var.type == 'bool':
+        return "$CONDITION"
     return 'new {}()'.format(var.type)
 
 def assign_var(ctx, nonterm, tokens):
@@ -134,7 +136,27 @@ rules["$INCLUDES"] = {
         ("$INCLUDE", "$INCLUDES"): .8,
         ("",): .2,
 }
-_types = ['int', 'char', 'long', 'short', 'float', 'double']
+rules["$CONDITION"] = {
+        ("$EXPR", "$CMP", "$EXPR"): Fraction(7, 10),
+        ("$EXPR",): Fraction(3, 10)
+}
+cmpops = "&&", "==", "!=", ">", ">=", "<", "<="
+rules["$CMP"] = {}
+for cmpop in cmpops:
+    rules["$CMP"][(cmpop,)] = Fraction(1, len(cmpops))
+rules["$EXPR"] = {
+        ("$VAL", "$OP", "$VAL"): Fraction(3, 10),
+        ("$VAL",): Fraction(5, 10),
+        ("!", "$VAL"): Fraction(2, 10)
+}
+rules["$VAL"] = {
+        (existing_var,): 1
+}
+ops = "+", '-', '/', "*", ">>", "<<", "&", "|"
+rules["$OP"] = {}
+for op in ops:
+    rules["$OP"][(op,)] = Fraction(1, len(ops))
+_types = ['int', 'char', 'long', 'short', 'float', 'double', 'bool']
 _types = [t + ' ' for t in _types.copy()]
 types = [t.strip() + " *" for t in _types] +  _types  # start small
 rules["$TYPE"] = {}
