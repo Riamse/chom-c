@@ -109,7 +109,7 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
+        (enter_scope, "#include <stdbool.h>\n", "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
 }
 rules["$MAINFUNC"] = {
         ("int main(int argc, char *argv[])\n{\n", enter_scope, "$DECLS", "\n", "$ASSIGNS", exit_scope, "}\n"): 1
@@ -152,13 +152,13 @@ rules["$EXPR"] = {
 rules["$VAL"] = {
         (existing_var,): 1
 }
-ops = "+", '-', '/', "*", ">>", "<<", "&", "|"
+ops = "+", '-', '/', "*", #">>", "<<", "&", "|"
 rules["$OP"] = {}
 for op in ops:
     rules["$OP"][(op,)] = Fraction(1, len(ops))
 _types = ['int', 'char', 'long', 'short', 'float', 'double', 'bool']
 _types = [t + ' ' for t in _types.copy()]
-types = [t.strip() + " *" for t in _types] +  _types  # start small
+types = [t.strip() + " *" for t in _types if 1==0] +  _types  # start small
 rules["$TYPE"] = {}
 for t in types:
     rules["$TYPE"][(t,)] = Fraction(1, len(types))
