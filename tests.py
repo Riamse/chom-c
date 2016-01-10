@@ -30,6 +30,8 @@ cpus = mp.cpu_count()
 total //= cpus
 q = mp.Queue(cpus)
 
+print("%d cores, %d processes for each core" % (cpus, total))
+
 for i in range(cpus):
     mp.Process(target=zillion_tests, args=[q, i, total]).start()
 ret = [q.get() for n in range(cpus)]
