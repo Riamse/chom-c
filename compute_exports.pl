@@ -25,5 +25,5 @@ foreach my $dot_h (@$HEADERS) {
     $dot_h = substr($dot_h, 8, -1);
     #$dot_h =~ s/(;|\$VAR1 = )//g;
     $script = sprintf $TPL, $text, $dot_h;
-    system("python", "-c", $script);
+    system("python3", "-c", $script);
 }
