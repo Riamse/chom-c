@@ -28,11 +28,11 @@ with open("markov.syllable.pkl", "rb") as fp:
 def makeify_new_var():
     return ''.join(m.generate())
 
+not_allowed = {'main', 'argc', 'argv', 'while', 'for', 'if', 'return', 'break', 'continue', 'switch', 'default', 'int', 'char', 'long', 'short', 'float', 'double', 'bool', 'static', 'unsigned', 'signed', 'union', 'inline', 'register', 'struct', 'volatile'}
 def new_var(ctx, nonterm, tokens):
     # fortunately we're allowed to 'override' upperly scoped scopes
     # so we can just check the most recently bescopen scopes for stuff
     frame = ctx.frames[-1]
-    not_allowed = {'main', 'argc', 'argv', 'while', 'for', 'if', 'return', 'break', 'continue', 'switch', 'default', 'int', 'char', 'long', 'short', 'float', 'double', 'bool', 'static', 'unsigned', 'signed', 'union', 'inline'}
     new_var_name = makeify_new_var()
     while new_var_name in frame or new_var_name in not_allowed:
         new_var_name = makeify_new_var()  # TODO: markov chains from last year
@@ -52,6 +52,14 @@ def register_new_func(ctx, nonterm, tokens):
     frame = ctx.frames[-1]
     datatype, crap, varname, crap, crap, crap, crap, crap, crap, crap, crap, crap, self = tokens
     frame[varname] = Callable(datatype, dict())
+    return ''
+
+def register_include(ctx, nonterm, tokens):
+    crap, crap, dot_h, crap, crap, self = tokens
+    frame = ctx.frames[0]
+    for symbol in get_exports(dot_h):
+        frame[symbol] = NotAllowed()
+        not_allowed.add(symbol)
     return ''
 
 def squishify_frames(ctx):
@@ -110,7 +118,7 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "#include <stdbool.h>\n", "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
+        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
 }
 rules["$MAINFUNC"] = {
         ("int main(int argc, char *argv[])\n{\n", enter_scope, "$DECLS", "\n", "$ASSIGNS", exit_scope, "}\n"): 1
@@ -131,7 +139,7 @@ rules["$MOREARGS"] = {
         ("",): .6
 }
 rules["$INCLUDE"] = {
-        ("#include", "<", "$DOT_H", ">", '\n'): 1,
+        ("#include", "<", "$DOT_H", ">", '\n', register_include): 1,
 }
 rules["$INCLUDES"] = {
         ("$INCLUDE", "$INCLUDES"): .8,
