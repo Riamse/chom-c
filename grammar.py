@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-# TODO: add Context objects for blocks and variables and stuff.
 
 import sys
 import random

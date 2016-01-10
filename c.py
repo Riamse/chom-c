@@ -1,8 +1,6 @@
 #!/usr/bin/python
 
 # this program outputs a bunch of random C code.
-# TODO: add Context objects for blocks and variables and stuff.
-# ^ or maybe some function calls and context is externally kept? or?
 
 import random
 import pickle
@@ -28,7 +26,7 @@ with open("markov.syllable.pkl", "rb") as fp:
 def makeify_new_var():
     return ''.join(m.generate())
 
-not_allowed = {'main', 'argc', 'argv', 'while', 'for', 'if', 'return', 'break', 'continue', 'switch', 'default', 'int', 'char', 'long', 'short', 'float', 'double', 'bool', 'static', 'unsigned', 'signed', 'union', 'inline', 'register', 'struct', 'volatile'}
+not_allowed = {'main', 'break', 'struct', 'unsigned', 'union', 'return', 'enum', 'float', 'while', 'if', 'typedef', 'register', 'volatile', 'auto', 'double', 'for', 'sizeof', 'goto', 'default', 'long', 'extern', 'char', 'int', 'const', 'signed', 'case', 'switch', 'continue', 'void', 'static', 'do', 'else', 'short', 'restrict', 'inline', 'alignof'}
 def new_var(ctx, nonterm, tokens):
     # fortunately we're allowed to 'override' upperly scoped scopes
     # so we can just check the most recently bescopen scopes for stuff

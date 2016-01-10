@@ -42,12 +42,17 @@ foreach my $line (@lines) {
 system("cpp -dM < /tmp/shit.c > /tmp/macros");
 open FH2, "</tmp/macros";
 foreach my $line (<FH2>) {
+    my $paren;
     my @parts;
     @parts = split / /, $line, 3;
     if ($parts[1] =~ /_/) {
         next;
     }
     $parts[1] =~ s/^\s+|\s+$//g;
+    $paren = index $parts[1], "(";
+    if ($paren != -1) {
+        $parts[1] = substr $parts[1], 0, $paren;
+    }
     push @idents, $parts[1];
 }
 close FH2;
