@@ -165,7 +165,7 @@ ops = "+", '-', '/', "*", #">>", "<<", "&", "|"
 rules["$OP"] = {}
 for op in ops:
     rules["$OP"][(op,)] = Fraction(1, len(ops))
-_types = ['int', 'char', 'long', 'short', 'float', 'double', 'bool']
+_types = ['int', 'char', 'long', 'short', 'float', 'double']
 _types = [t + ' ' for t in _types.copy()]
 types = [t.strip() + " *" for t in _types if 1==0] +  _types  # start small
 rules["$TYPE"] = {}
