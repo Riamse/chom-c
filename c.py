@@ -46,10 +46,20 @@ def register_new_var(ctx, nonterm, tokens):
     return ''
 
 def register_new_func(ctx, nonterm, tokens):
-    # TODO: function arguments
     frame = ctx.frames[-1]
-    datatype, crap, varname, crap, crap, crap, crap, crap, crap, crap, crap, crap, self = tokens
-    frame[varname] = Callable(datatype, dict())
+    datatype, crap, varname, crap, crap, argdecl, crap, crap, crap, crap, crap, crap, crap, self = tokens
+    args = argdecl.split(', ')
+    if args == ['']:
+        args.clear()
+    for i, arg in enumerate(args):
+        type_, name = arg.split(" ")
+        stars = name.count("*")
+        name = name.replace("*", '')
+        args[i] = name, Data(type_, stars, None)
+    stars = datatype.count("*")
+    type_ = datatype.replace("*", '').strip()
+    datatype = Data(type_, stars, None)
+    frame[varname] = Callable(datatype, dict(args))
     return ''
 
 def register_include(ctx, nonterm, tokens):
@@ -96,7 +106,7 @@ def instance_of_var(ctx, nonterm, tokens):
     elif var.type in {'double', 'float'}:
         return str(random.random() * 2 ** 30)
     elif var.type == 'char':
-        return repr(random.choice('aoeuidhtnspyfgcrlqjkxbmwvz'))
+        return repr(chr(random.randint(0, 255)))
     elif var.type == 'bool':
         return "$CONDITION"
     return 'new {}()'.format(var.type)
@@ -116,48 +126,67 @@ for p in l:
     rules["$DOT_H"][(p,)] = Fraction(1, len(l))
 
 rules["$FILE"] = {
-        (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
+    (enter_scope, "$INCLUDES", '\n', "$DECLS",'\n',"$FUNCDECLS", '\n', "$MAINFUNC", "\n", exit_scope): 1
 }
 rules["$MAINFUNC"] = {
-        ("int main(int argc, char *argv[])\n{\n", enter_scope, "$DECLS", "\n", "$ASSIGNS", exit_scope, "}\n"): 1
+    ("int main(int argc, char *argv[])\n{\n", enter_scope, "$DECLS", "\n", "$ASSIGNS", exit_scope, "}\n"): 1
 }
 rules["$FUNCDECLS"] = {
-        ("$FUNCDECL", "$FUNCDECLS"): .3,
-        ("",): .7
+    ("$FUNCDECL", "$FUNCDECLS"): Fraction(3, 10),
+    ("",): Fraction(7, 10)
 }
 rules["$FUNCDECL"] = {
-        ("$TYPE", ' ', new_var, enter_scope, "(", "$ARGDECL", ")\n{\n", "$DECLS", '\n', "$ASSIGNS", exit_scope, "}\n", register_new_func): 1
+    ("$TYPE", ' ', new_var, enter_scope, "(", "$ARGDECL", ")\n{\n", "$DECLS", '\n', "$ASSIGNS", "$MORECODE", exit_scope, "}\n", register_new_func): 1
 }
 rules["$ARGDECL"] = {
-        ("$DECL", "$MOREARGS"): .5,
-        ("",): .5
+    ("$DECL", "$MOREARGS"): .5,
+    ("",): .5
 }
 rules["$MOREARGS"] = {
-        (', ', "$DECL", "$MOREARGS"): .4,
-        ("",): .6
+    (', ', "$DECL", "$MOREARGS"): .4,
+    ("",): .6
+}
+rules["$IFFLOW"] = {
+    ('\t', "if", ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD"): 1
+}
+rules["$WHILEFLOW"] = {
+    ('\t', 'while', ' ', '(', "$CONDITION", ")", ' ', "$FLOWSUBORD"): 1
+}
+rules["$FLOWSUBORD"] = {
+    ("{\n", enter_scope, "$CODE", exit_scope, "\t}\n"): Fraction(1, 3),
+    (enter_scope, "$ASSIGN;", exit_scope): Fraction(2, 3)
+}
+rules["$CODE"] = {
+    ("$DECLS", "$ASSIGNS", "$MORECODE"): 1
+}
+rules["$MORECODE"] = {
+    ("$IFFLOW", "$MORECODE"): Fraction(1, 10),
+    ("$WHILEFLOW", "$MORECODE"): Fraction(1, 10),
+    ("$ASSIGNS", "$MORECODE"): Fraction(3, 5),
+    ("",): Fraction(1, 5)
 }
 rules["$INCLUDE"] = {
-        ("#include", "<", "$DOT_H", ">", '\n', register_include): 1,
+    ("#include", "<", "$DOT_H", ">", '\n', register_include): 1,
 }
 rules["$INCLUDES"] = {
-        ("$INCLUDE", "$INCLUDES"): .8,
-        ("",): .2,
+    ("$INCLUDE", "$INCLUDES"): .8,
+    ("",): .2,
 }
 rules["$CONDITION"] = {
-        ("$EXPR", "$CMP", "$EXPR"): Fraction(7, 10),
-        ("$EXPR",): Fraction(3, 10)
+    ("$EXPR", ' ', "$CMP", ' ', "$EXPR"): Fraction(7, 10),
+    ("$EXPR",): Fraction(3, 10)
 }
 cmpops = "&&", "==", "!=", ">", ">=", "<", "<="
 rules["$CMP"] = {}
 for cmpop in cmpops:
     rules["$CMP"][(cmpop,)] = Fraction(1, len(cmpops))
 rules["$EXPR"] = {
-        ("$VAL", "$OP", "$VAL"): Fraction(3, 10),
-        ("$VAL",): Fraction(5, 10),
-        ("!", "$VAL"): Fraction(2, 10)
+    ("$VAL", ' ', "$OP", ' ', "$VAL"): Fraction(3, 10),
+    ("$VAL",): Fraction(5, 10),
+    ("!", "$VAL"): Fraction(2, 10)
 }
 rules["$VAL"] = {
-        (existing_var,): 1
+    (existing_var,): 1
 }
 ops = "+", '-', '/', "*", #">>", "<<", "&", "|"
 rules["$OP"] = {}
@@ -170,24 +199,24 @@ rules["$TYPE"] = {}
 for t in types:
     rules["$TYPE"][(t,)] = Fraction(1, len(types))
 rules["$DECL"] = {
-        ("$TYPE", new_var, register_new_var): 1,
+    ("$TYPE", new_var, register_new_var): 1,
 }
 rules["$DECL;"] = {
-        ("$DECL", ";\n"): 1,
+    ("$DECL", ";\n"): 1,
 }
 rules["$DECLS"] = {
-        ('\t', "$DECL;", "$DECLS"): .6,
-        ("",): .4,
+    ('\t', "$DECL;", "$DECLS"): .6,
+    ("",): .4,
 }
 rules["$ASSIGN"] = {
-        (existing_var, ' = ', instance_of_var, assign_var): 1
+    (existing_var, ' = ', instance_of_var, assign_var): 1
 }
 rules["$ASSIGN;"] = {
-        ("$ASSIGN", ";\n"): 1
+    ("$ASSIGN", ";\n"): 1
 }
 rules["$ASSIGNS"] = {
-        ('\t', "$ASSIGN;", "$ASSIGNS"): .6,
-        ("",): .4,
+    ('\t', "$ASSIGN;", "$ASSIGNS"): .6,
+    ("",): .4,
 }
 
 
