@@ -31,7 +31,7 @@ close FH;
 foreach my $line (@lines) {
     my @words;
     @words = split /:/, $line;
-    if ($words[1] =~ /_/) {
+    if (index($words[1], "_") != -1) {
         next;
     }
     $words[1] =~ s/lngt$//;
@@ -39,13 +39,12 @@ foreach my $line (@lines) {
     push @idents, $words[1];
 }
 
-system("cpp -dM < /tmp/shit.c > /tmp/macros");
-open FH2, "</tmp/macros";
+open(FH2, '-|', "cpp -dM < /tmp/shit.c");
 foreach my $line (<FH2>) {
     my $paren;
     my @parts;
     @parts = split / /, $line, 3;
-    if ($parts[1] =~ /_/) {
+    if (index($parts[1], "_") != -1) {
         next;
     }
     $parts[1] =~ s/^\s+|\s+$//g;
@@ -57,13 +56,4 @@ foreach my $line (<FH2>) {
 }
 close FH2;
 
-print "{";
-for (my $i = 0; $i < scalar @idents; ++$i) {
-    my $ident;
-    chomp($ident = Dumper $idents[$i]);
-    $ident = substr($ident, 8, -1);
-    #$ident =~ s/(;|\$VAR1 = )//g;
-    $ident .= ', ' if $i < scalar @idents - 1;
-    print $ident;
-}
-print "}\n";
+printf "{%s}\n", join(", ", map { substr Dumper($_), 8, -2 } @idents);

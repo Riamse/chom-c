@@ -19,11 +19,9 @@ END
 
 foreach my $dot_h (@$HEADERS) {
     my $text;
-    my $script;
     $text = `perl get_exports.pl $dot_h`;
-    chomp($dot_h = Dumper ($dot_h . '.pkl'));
+    chomp($dot_h = Dumper($dot_h . '.pkl'));
     $dot_h = substr($dot_h, 8, -1);
     #$dot_h =~ s/(;|\$VAR1 = )//g;
-    $script = sprintf $TPL, $text, $dot_h;
-    system("python3", "-c", $script);
+    system("python3", "-c", sprintf($TPL, $text, $dot_h));
 }
