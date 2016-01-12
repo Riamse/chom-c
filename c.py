@@ -108,7 +108,7 @@ def instance_of_var(ctx, nonterm, tokens):
     elif var.type in {'double', 'float'}:
         return str(random.random() * 2 ** 30)
     elif var.type == 'char':
-        return repr(chr(random.randint(0, 255)))
+        return repr(bytes([random.randint(0, 127)]).decode("ascii"))
     elif var.type == 'bool':
         return "$CONDITION"
     return 'new {}()'.format(var.type)
