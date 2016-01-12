@@ -34,9 +34,9 @@ print("%d cores, %d processes for each core" % (cpus, total))
 
 for i in range(cpus):
     mp.Process(target=zillion_tests, args=[q, i, total]).start()
-ret = [q.get() for n in range(cpus)]
-ret = dict(ret)
-for k, v in ret.items():
+
+for i in range(cpus):
+    k, v = q.get()
     if v == 0:
         print("Process #{} failed".format(k))
     elif v == 1:
