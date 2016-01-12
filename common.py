@@ -11,7 +11,10 @@ Callable = namedtuple("Callable", 'retval args')
 
 class NotAllowed: pass
 
-class Abort(Exception): pass
+class Abort(Exception):
+    level = 0
+    def __init__(self, level=0):
+        self.level = level
 
 def get_exports(dot_h):
     dot_h += '.pkl'

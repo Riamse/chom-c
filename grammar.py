@@ -119,8 +119,11 @@ class Grammar:
             if callable(tok):
                 try:
                     tok = tok(self, nonterm, tokens)
-                except Abort:
-                    return ['']
+                except Abort as e:
+                    if e.level < 1:
+                        return ['']
+                    # propagate to the parent recursive call
+                    raise Abort(e.level - 1)
             tokens[i] = tok
             tabs = self.tabs
             if tok in self.nonterms:

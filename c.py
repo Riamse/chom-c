@@ -80,21 +80,23 @@ def squishify_frames(ctx):
             squished[k] = v
     return squished
 
-def existing_var(ctx, nonterm, tokens):
-    # we should be searching from all frames in the squishified dict
-    frame = squishify_frames(ctx)
-    for k, v in tuple(frame.items()):
-        if not isinstance(v, Data):
-            del frame[k]
-    if not frame:
-        # XXX if there's no variables we're fucked
-        # make an Exception that tells you to abort the line entirely?
-        # but such an exception can't work if you make a new context though
-        # but if you make a new context the frame's going to be empty anyway
-        # so in no cases should something like this even be called if we're
-        # making a new frame in the same expansion, then.
-        raise Abort()
-    return random.choice(tuple(frame.keys()))  # cba to use prob dists for this
+def existing_var(n):
+    def wrapped(ctx, nonterm, tokens):
+        # we should be searching from all frames in the squishified dict
+        frame = squishify_frames(ctx)
+        for k, v in tuple(frame.items()):
+            if not isinstance(v, Data):
+                del frame[k]
+        if not frame:
+            # XXX if there's no variables we're fucked
+            # make an Exception that tells you to abort the line entirely?
+            # but such an exception can't work if you make a new context though
+            # but if you make a new context the frame's going to be empty anyway
+            # so in no cases should something like this even be called if we're
+            # making a new frame in the same expansion, then.
+            raise Abort(n)
+        return random.choice(tuple(frame.keys()))  # cba to use prob dists for this
+    return wrapped
 
 def instance_of_var(ctx, nonterm, tokens):
     frame = squishify_frames(ctx)
@@ -181,12 +183,9 @@ rules["$CMP"] = {}
 for cmpop in cmpops:
     rules["$CMP"][(cmpop,)] = Fraction(1, len(cmpops))
 rules["$EXPR"] = {
-    ("$VAL", ' ', "$OP", ' ', "$VAL"): Fraction(3, 10),
-    ("$VAL",): Fraction(5, 10),
-    ("!", "$VAL"): Fraction(2, 10)
-}
-rules["$VAL"] = {
-    (existing_var,): 1
+    (existing_var(1), ' ', "$OP", ' ', existing_var(1)): Fraction(3, 10),
+    (existing_var(1),): Fraction(5, 10),
+    ("!", existing_var(1)): Fraction(2, 10)
 }
 ops = "+", '-', '/', "*", #">>", "<<", "&", "|"
 rules["$OP"] = {}
@@ -209,7 +208,7 @@ rules["$DECLS"] = {
     ("",): .4,
 }
 rules["$ASSIGN"] = {
-    (existing_var, ' = ', instance_of_var, assign_var): 1
+    (existing_var(0), ' = ', instance_of_var, assign_var): 1
 }
 rules["$ASSIGN;"] = {
     ("$ASSIGN", ";\n"): 1
