@@ -149,14 +149,26 @@ rules["$MOREARGS"] = {
     ("",): .6
 }
 rules["$IFFLOW"] = {
-    ('\t', "if", ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD"): 1
+    ('\t', "if", ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORDFIN"): Fraction(1, 2),
+    ('\t', "if", ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD", 'else', ' ', "$ELIFFLOW"): Fraction(1, 2)
 }
+rules["$ELIFFLOW"] = {
+    ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORDFIN"): Fraction(1, 3),
+    ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD", 'else', ' ', "$FLOWSUBORDFIN"): Fraction(1, 3),
+    ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD", 'else', ' ', "$ELIFFLOW"): Fraction(1, 3),
+
+}
+
 rules["$WHILEFLOW"] = {
-    ('\t', 'while', ' ', '(', "$CONDITION", ")", ' ', "$FLOWSUBORD"): 1
+    ('\t', 'while', ' ', '(', "$CONDITION", ")", ' ', "$FLOWSUBORDFIN"): 1
 }
 rules["$FLOWSUBORD"] = {
+    ("{\n", enter_scope, "$CODE", exit_scope, "\t} "): Fraction(1, 3),
+    (enter_scope, '\n', '\t', "$ASSIGN;",  exit_scope, '\t'): Fraction(2, 3)
+}
+rules["$FLOWSUBORDFIN"] = {
     ("{\n", enter_scope, "$CODE", exit_scope, "\t}\n"): Fraction(1, 3),
-    (enter_scope, "$ASSIGN;", exit_scope): Fraction(2, 3)
+    (enter_scope, '\n','\t', "$ASSIGN;", exit_scope): Fraction(2, 3)
 }
 rules["$CODE"] = {
     ("$DECLS", "$ASSIGNS", "$MORECODE"): 1
