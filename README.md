@@ -1,5 +1,5 @@
 # chom-c
-A simple generative grammar for C code.
+A generative grammar for a subset of C code.
 
 You'll first want to run `mkdir header_exports`, and then `perl compute_exports.pl`. Then you can run `python -i c.py` and do things to `g` as you wish.
 
