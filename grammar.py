@@ -127,7 +127,13 @@ class Grammar:
             tokens[i] = tok
             tabs = self.tabs
             if tok in self.nonterms:
-                toks = self.expand(tok)
+                try:
+                    toks = self.expand(tok)
+                except Abort as e:
+                    if e.level < 1:
+                        return ['']
+                    # propagate to the parent recursive call (again)
+                    raise Abort(e.level - 1)
                 #toks = [t.replace("\t", "\t" * tabs) for t in toks]
                 ret.extend(toks)
                 tokens[i] = ''.join(toks).replace("\t", "\t" * tabs)
