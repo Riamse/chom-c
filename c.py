@@ -156,11 +156,12 @@ rules["$ELIFFLOW"] = {
     ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORDFIN"): Fraction(1, 3),
     ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD", 'else', ' ', "$FLOWSUBORDFIN"): Fraction(1, 3),
     ('if', ' ', "(", "$CONDITION", ")", ' ', "$FLOWSUBORD", 'else', ' ', "$ELIFFLOW"): Fraction(1, 3),
-
 }
-
 rules["$WHILEFLOW"] = {
     ('\t', 'while', ' ', '(', "$CONDITION", ")", ' ', "$FLOWSUBORDFIN"): 1
+}
+rules["$FORFLOW"] = {
+    ("\t", "for", ' ', "(", "$ASSIGN", '; ', "$CONDITION", '; ', "$ASSIGN", ")", " ", "$FLOWSUBORDFIN"): 1
 }
 rules["$FLOWSUBORD"] = {
     ("{\n", enter_scope, "$CODE", exit_scope, "\t} "): Fraction(1, 3),
@@ -171,12 +172,16 @@ rules["$FLOWSUBORDFIN"] = {
     (enter_scope, '\n','\t', "$ASSIGN;", exit_scope): Fraction(2, 3)
 }
 rules["$CODE"] = {
-    ("$DECLS", "$ASSIGNS", "$MORECODE"): 1
+    ("$DECLS", "$ASSIGNS", "$MORECODE"): Fraction(7, 10),
+    ("$ASSIGNS", "$MORECODE"): Fraction(1, 10),
+    ("$MORECODE",): Fraction(1, 10),
+    ("$ASSIGNS",): Fraction(1, 10),
 }
 rules["$MORECODE"] = {
     ("$IFFLOW", "$MORECODE"): Fraction(1, 10),
     ("$WHILEFLOW", "$MORECODE"): Fraction(1, 10),
-    ("$ASSIGNS", "$MORECODE"): Fraction(3, 5),
+    ("$FORFLOW", "$MORECODE"): Fraction(1, 10),  # XXX: bad idea
+    ("$ASSIGNS", "$MORECODE"): Fraction(7, 10),
     ("",): Fraction(1, 5)
 }
 rules["$INCLUDE"] = {
