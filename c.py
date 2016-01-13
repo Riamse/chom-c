@@ -200,9 +200,9 @@ rules["$CMP"] = {}
 for cmpop in cmpops:
     rules["$CMP"][(cmpop,)] = Fraction(1, len(cmpops))
 rules["$EXPR"] = {
-    (existing_var(1), ' ', "$OP", ' ', existing_var(1)): Fraction(3, 10),
-    (existing_var(1),): Fraction(5, 10),
-    ("!", existing_var(1)): Fraction(2, 10)
+    (existing_var(2), ' ', "$OP", ' ', existing_var(2)): Fraction(3, 10),
+    (existing_var(2),): Fraction(5, 10),
+    ("!", existing_var(2)): Fraction(2, 10)
 }
 ops = "+", '-', '/', "*", #">>", "<<", "&", "|"
 rules["$OP"] = {}
